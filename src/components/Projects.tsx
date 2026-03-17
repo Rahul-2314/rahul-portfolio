@@ -1,195 +1,226 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PROJECTS } from "@/lib/data";
 import { GitHubIcon, ExternalIcon } from "@/components/Icons";
 
-// ─── Live preview panel ────────────────────────────────────────────────────
-// Shows a scaled-down iframe of the live site.
-// Many sites block iframes (X-Frame-Options); we show a fallback in that case.
+// ─── Live preview ──────────────────────────────────────────────────────────
+// ResizeObserver measures the actual wrapper width every time the layout
+// changes and recomputes `scale = containerWidth / 1200` so the iframe
+// always fits exactly — no hardcoded breakpoint magic.
 function LivePreview({ url, title }: { url: string; title: string }) {
 	const [blocked, setBlocked] = useState(false);
 	const [loaded, setLoaded] = useState(false);
+	const [scale, setScale] = useState(0.25); // initial desktop guess
+	const wrapRef = useRef<HTMLDivElement>(null);
 
-	// "#" means no live URL — show placeholder immediately
+	useEffect(() => {
+		if (!wrapRef.current) return;
+		const ro = new ResizeObserver((entries) => {
+			const w = entries[0].contentRect.width;
+			if (w > 0) setScale(w / 1200); // 1200 = iframe rendered width
+		});
+		ro.observe(wrapRef.current);
+		return () => ro.disconnect();
+	}, []);
+
+	// visible height tracks the scale so there's no dead space below
+	const visibleH = Math.max(160, Math.round(scale * 960));
+
+	// ── No URL ──
 	if (url === "#") {
 		return (
-			<div
-				style={{
-					width: "100%",
-					height: "100%",
-					minHeight: 200,
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: 10,
-					background: "var(--bg3)",
-					border: "1px dashed var(--bdr2)",
-					borderRadius: 10,
-					padding: "1.5rem",
-				}}
-			>
-				<span style={{ fontSize: "1.5rem" }}>🚧</span>
-				<p
+			<div ref={wrapRef} style={{ width: "100%" }}>
+				<div
 					style={{
-						fontFamily: "var(--FM)",
-						fontSize: "0.65rem",
-						color: "var(--faint)",
-						letterSpacing: "0.08em",
-						textAlign: "center",
+						width: "100%",
+						height: visibleH,
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 10,
+						background: "var(--bg3)",
+						border: "1px dashed rgba(255,255,255,0.12)",
+						borderRadius: 12,
+						padding: "2rem",
 					}}
 				>
-					Live demo coming soon
-				</p>
+					<span style={{ fontSize: "1.6rem" }}>🚧</span>
+					<p
+						style={{
+							fontFamily: "var(--FM)",
+							fontSize: "0.65rem",
+							color: "var(--faint)",
+							letterSpacing: "0.08em",
+							textAlign: "center",
+						}}
+					>
+						Live demo coming soon
+					</p>
+				</div>
 			</div>
 		);
 	}
 
+	// ── Blocked by X-Frame-Options ──
 	if (blocked) {
 		return (
-			<a
-				href={url}
-				target="_blank"
-				rel="noreferrer"
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: 12,
-					width: "100%",
-					height: "100%",
-					minHeight: 200,
-					background: "var(--bg3)",
-					border: "1px solid var(--bdr2)",
-					borderRadius: 10,
-					textDecoration: "none",
-					padding: "1.5rem",
-					transition: "border-color .2s",
-				}}
-				onMouseEnter={(e) =>
-					(e.currentTarget.style.borderColor = "rgba(34,211,238,0.35)")
-				}
-				onMouseLeave={(e) =>
-					(e.currentTarget.style.borderColor = "var(--bdr2)")
-				}
-			>
-				<span style={{ fontSize: "1.8rem" }}>🔗</span>
-				<p
+			<div ref={wrapRef} style={{ width: "100%" }}>
+				<a
+					href={url}
+					target="_blank"
+					rel="noreferrer"
 					style={{
-						fontFamily: "var(--FM)",
-						fontSize: "0.68rem",
-						color: "var(--cyan)",
-						letterSpacing: "0.06em",
-						textAlign: "center",
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: 12,
+						width: "100%",
+						height: visibleH,
+						background: "var(--bg3)",
+						border: "1px solid var(--bdr2)",
+						borderRadius: 12,
+						textDecoration: "none",
+						padding: "2rem",
+						transition: "border-color .2s",
 					}}
+					onMouseEnter={(e) =>
+						((e.currentTarget as HTMLElement).style.borderColor =
+							"rgba(34,211,238,0.35)")
+					}
+					onMouseLeave={(e) =>
+						((e.currentTarget as HTMLElement).style.borderColor = "var(--bdr2)")
+					}
 				>
-					Click to open live site
-				</p>
-				<p
-					style={{
-						fontFamily: "var(--FM)",
-						fontSize: "0.6rem",
-						color: "var(--faint)",
-						textAlign: "center",
-					}}
-				>
-					{new URL(url).hostname}
-				</p>
-			</a>
+					<span style={{ fontSize: "2rem" }}>🔗</span>
+					<p
+						style={{
+							fontFamily: "var(--FM)",
+							fontSize: "0.7rem",
+							color: "var(--cyan)",
+							textAlign: "center",
+						}}
+					>
+						Click to open live site
+					</p>
+					<p
+						style={{
+							fontFamily: "var(--FM)",
+							fontSize: "0.6rem",
+							color: "var(--faint)",
+							textAlign: "center",
+						}}
+					>
+						{new URL(url).hostname}
+					</p>
+				</a>
+			</div>
 		);
 	}
 
+	// ── Live iframe ──
 	return (
-		<div
-			style={{
-				width: "100%",
-				position: "relative",
-				aspectRatio: "4 / 3",
-				borderRadius: 10,
-				overflow: "hidden",
-				border: "1px solid var(--bdr2)",
-				background: "var(--bg3)",
-			}}
-		>
-			{/* loading shimmer */}
-			{!loaded && (
-				<div
+		<div ref={wrapRef} style={{ width: "100%" }}>
+			<div
+				style={{
+					width: "100%",
+					height: visibleH, // exact: no dead space, no overflow
+					borderRadius: 12,
+					overflow: "hidden",
+					border: "1px solid var(--bdr2)",
+					background: "var(--bg3)",
+					position: "relative",
+				}}
+			>
+				{/* Skeleton shimmer while loading */}
+				{!loaded && (
+					<div
+						style={{
+							position: "absolute",
+							inset: 0,
+							background:
+								"linear-gradient(90deg, var(--bg2) 0%, var(--bg3) 50%, var(--bg2) 100%)",
+							backgroundSize: "200% 100%",
+							animation: "skeletonSlide 1.4s ease infinite",
+							zIndex: 2,
+						}}
+					/>
+				)}
+
+				{/*
+          iframe: always rendered at 1200×960. Scaled down by ResizeObserver-
+          computed value so it fills the container width exactly.
+          transformOrigin: top left is essential — without it the iframe
+          scales from centre and bleeds outside the box.
+        */}
+				<iframe
+					src={url}
+					title={`${title} live preview`}
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						width: 1200,
+						height: 960,
+						border: "none",
+						transformOrigin: "top left",
+						transform: `scale(${scale})`,
+						pointerEvents: "none",
+					}}
+					sandbox="allow-scripts allow-same-origin"
+					loading="lazy"
+					onLoad={() => setLoaded(true)}
+					onError={() => setBlocked(true)}
+				/>
+
+				{/* Transparent click overlay — opens the live site */}
+				<a
+					href={url}
+					target="_blank"
+					rel="noreferrer"
 					style={{
 						position: "absolute",
 						inset: 0,
-						background:
-							"linear-gradient(90deg, var(--bg2) 0%, var(--bg3) 50%, var(--bg2) 100%)",
-						backgroundSize: "200% 100%",
-						animation: "skeletonSlide 1.4s ease infinite",
-						zIndex: 2,
-					}}
-				/>
-			)}
-
-			{/* The iframe is scaled down to fit the preview box.
-          We render the full page at desktop width then scale it visually. */}
-			<iframe
-				src={url}
-				title={`${title} preview`}
-				style={{
-					position: "absolute",
-					top: 0,
-					left: 0,
-					width: "1200px",
-					height: "900px",
-					border: "none",
-					transformOrigin: "top left",
-					transform: "scale(var(--iframe-scale, 0.28))",
-					pointerEvents: "none", // let the outer <a> handle clicks
-				}}
-				sandbox="allow-scripts allow-same-origin"
-				loading="lazy"
-				onLoad={() => setLoaded(true)}
-				onError={() => setBlocked(true)}
-			/>
-
-			{/* clickable overlay that opens the live site */}
-			<a
-				href={url}
-				target="_blank"
-				rel="noreferrer"
-				style={{ position: "absolute", inset: 0, zIndex: 3, display: "block" }}
-				aria-label={`Open ${title} live site`}
-			/>
-
-			{/* "Live" badge */}
-			<div
-				style={{
-					position: "absolute",
-					bottom: 10,
-					right: 10,
-					zIndex: 4,
-					display: "flex",
-					alignItems: "center",
-					gap: 5,
-					fontFamily: "var(--FM)",
-					fontSize: "0.58rem",
-					letterSpacing: "0.1em",
-					color: "var(--green)",
-					background: "rgba(6,10,17,0.85)",
-					border: "1px solid rgba(74,222,128,0.25)",
-					padding: "3px 9px",
-					borderRadius: 100,
-					backdropFilter: "blur(6px)",
-				}}
-			>
-				<span
-					style={{
-						width: 5,
-						height: 5,
-						borderRadius: "50%",
-						background: "var(--green)",
+						zIndex: 3,
 						display: "block",
 					}}
+					aria-label={`Open ${title} live`}
 				/>
-				LIVE
+
+				{/* LIVE badge */}
+				<div
+					style={{
+						position: "absolute",
+						bottom: 8,
+						right: 8,
+						zIndex: 4,
+						display: "flex",
+						alignItems: "center",
+						gap: 5,
+						fontFamily: "var(--FM)",
+						fontSize: "0.56rem",
+						letterSpacing: "0.1em",
+						color: "var(--green)",
+						background: "rgba(6,10,17,0.88)",
+						border: "1px solid rgba(74,222,128,0.25)",
+						padding: "3px 8px",
+						borderRadius: 100,
+						backdropFilter: "blur(6px)",
+					}}
+				>
+					<span
+						style={{
+							width: 5,
+							height: 5,
+							borderRadius: "50%",
+							background: "var(--green)",
+							display: "block",
+						}}
+					/>
+					LIVE
+				</div>
 			</div>
 
 			<style>{`
@@ -197,16 +228,12 @@ function LivePreview({ url, title }: { url: string; title: string }) {
           0%   { background-position: -200% 0; }
           100% { background-position:  200% 0; }
         }
-        /* compute scale based on preview container width */
-        .preview-frame { --iframe-scale: 0.28; }
-        @media (max-width: 1100px) { .preview-frame { --iframe-scale: 0.24; } }
-        @media (max-width: 900px)  { .preview-frame { --iframe-scale: 0.28; } }
       `}</style>
 		</div>
 	);
 }
 
-// ─── Project card ──────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────────
 export default function Projects() {
 	return (
 		<section className="section" id="projects">
@@ -214,7 +241,7 @@ export default function Projects() {
 			<h2 className="s-title rv">Projects</h2>
 			<div className="s-bar rv" />
 
-			<div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+			<div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 				{PROJECTS.map((p, i) => (
 					<div
 						key={p.num}
@@ -223,10 +250,9 @@ export default function Projects() {
 					>
 						<div className="card-shimmer" />
 
-						{/* inner layout: info left, preview right */}
-						<div className="proj-card-inner">
-							{/* ── LEFT: project info ── */}
-							<div style={{ padding: "2rem", flex: 1, minWidth: 0 }}>
+						<div className="proj-layout">
+							{/* ── Info column ── */}
+							<div style={{ padding: "1.75rem 2rem", flex: 1, minWidth: 0 }}>
 								{/* header */}
 								<div
 									style={{
@@ -278,7 +304,6 @@ export default function Projects() {
 									)}
 								</div>
 
-								{/* long description */}
 								<p
 									style={{
 										fontSize: "0.87rem",
@@ -291,13 +316,12 @@ export default function Projects() {
 									{p.longDesc}
 								</p>
 
-								{/* stack pills */}
 								<div
 									style={{
 										display: "flex",
 										flexWrap: "wrap",
 										gap: 6,
-										marginBottom: "0.9rem",
+										marginBottom: "1rem",
 									}}
 								>
 									{p.stack.map((s) => (
@@ -311,8 +335,7 @@ export default function Projects() {
 									))}
 								</div>
 
-								{/* date + links row */}
-								<div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+								<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 									<span
 										style={{
 											fontFamily: "var(--FM)",
@@ -345,11 +368,8 @@ export default function Projects() {
 								</div>
 							</div>
 
-							{/* ── RIGHT: live preview ── */}
-							<div
-								className="proj-preview preview-frame"
-								style={{ padding: "1.5rem 1.5rem 1.5rem 0" }}
-							>
+							{/* ── Preview column — visible on ALL screen sizes ── */}
+							<div className="proj-preview-col">
 								<LivePreview url={p.liveUrl} title={p.title} />
 							</div>
 						</div>
@@ -358,25 +378,24 @@ export default function Projects() {
 			</div>
 
 			<style>{`
-        .proj-card-inner {
+        /* Desktop: info left, preview right */
+        .proj-layout {
           display: grid;
-          grid-template-columns: 1fr 320px;
-          align-items: start;
-          min-height: 240px;
+          grid-template-columns: 1fr 300px;
+          align-items: stretch;
         }
-        .proj-preview {
-          /* align preview vertically in the card */
+        .proj-preview-col {
+          padding: 1.5rem 1.5rem 1.5rem 0;
           display: flex;
           align-items: center;
         }
 
-        /* on tablet/mobile: stack, preview goes below */
+        /* Tablet / mobile: stack, preview goes below info.
+           ResizeObserver measures the new full width and rescales the
+           iframe automatically — no extra code needed.              */
         @media (max-width: 860px) {
-          .proj-card-inner { grid-template-columns: 1fr; }
-          .proj-preview {
-            padding: 0 1.5rem 1.5rem !important;
-            width: 100%;
-          }
+          .proj-layout          { grid-template-columns: 1fr; }
+          .proj-preview-col     { padding: 0 1.5rem 1.5rem !important; width: 100%; }
         }
       `}</style>
 		</section>
