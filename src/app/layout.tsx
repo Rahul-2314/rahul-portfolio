@@ -4,12 +4,22 @@ import "./globals.css";
 export const metadata: Metadata = {
 	title: "Rahul Chowdhury | Full-Stack MERN Developer",
 	description:
-		"BTech CSE Undergrad & Full-Stack MERN Developer based in Jaipur. Building production-grade applications with React, Node.js, and MongoDB.",
+		"BTech CSE (AIML) undergrad at UEM Jaipur. Full-Stack MERN Developer building production-grade applications and AI systems. Open to internships.",
+	metadataBase: new URL("https://rahulchowdhury.in"),
 	openGraph: {
 		title: "Rahul Chowdhury | Full-Stack Developer",
 		description:
 			"BTech CSE Undergrad building production-grade MERN applications.",
 		type: "website",
+		url: "https://rahulchowdhury.in",
+		siteName: "Rahul Chowdhury",
+		locale: "en_IN",
+	},
+	twitter: {
+		card: "summary",
+		title: "Rahul Chowdhury | Full-Stack Developer",
+		description: "BTech CSE Undergrad building production-grade MERN applications.",
+		site: "@rahul_x14",
 	},
 };
 
