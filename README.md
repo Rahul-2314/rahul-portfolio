@@ -39,31 +39,32 @@ Personal portfolio website — built with Next.js 14, TypeScript, and CSS custom
 
 ```
 rahul-portfolio/
-├── app/
-│   ├── layout.tsx              # Root layout, font injection, meta tags
-│   ├── page.tsx                # Home page — assembles all sections
-│   ├── globals.css             # Design tokens, animations, shared utilities
-│   └── blog/
-│       └── [slug]/
-│           └── page.tsx        # Dynamic blog post renderer
-├── components/
-│   ├── Navbar.tsx              # Fixed nav with animated mobile drawer
-│   ├── Hero.tsx                # Hero section
-│   ├── About.tsx
-│   ├── Skills.tsx
-│   ├── Projects.tsx            # Cards with live iframe previews
-│   ├── Experience.tsx          # Timeline with certificate links
-│   ├── GitHubGraph.tsx         # Live contribution calendar
-│   ├── BlogSection.tsx         # Blog listing
-│   ├── Contact.tsx             # Contact form (Formspree)
-│   ├── Footer.tsx
-│   └── Icons.tsx               # All SVG icons
-├── lib/
-│   ├── data.ts                 # ⭐ All site content — edit here
-│   ├── blogContent.ts          # Full blog post content
-│   └── hooks.ts                # useTypewriter, useReveal
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx              # Root layout, font injection, meta tags
+│   │   ├── page.tsx                # Home page — assembles all sections
+│   │   ├── globals.css             # Design tokens, animations, shared utilities
+│   │   └── blog/
+│   │       └── [slug]/
+│   │           └── page.tsx        # Dynamic blog post renderer
+│   ├── components/
+│   │   ├── Navbar.tsx              # Fixed nav with animated mobile drawer
+│   │   ├── Hero.tsx                # Hero section
+│   │   ├── About.tsx
+│   │   ├── Skills.tsx
+│   │   ├── Projects.tsx            # Cards with live iframe previews
+│   │   ├── Experience.tsx          # Timeline with certificate links
+│   │   ├── GitHubGraph.tsx         # Live contribution calendar
+│   │   ├── BlogSection.tsx         # Blog listing
+│   │   ├── Contact.tsx             # Contact form (Formspree)
+│   │   ├── Footer.tsx
+│   │   └── Icons.tsx               # All SVG icons
+│   └── lib/
+│       ├── data.ts                 # ⭐ All site content — edit here
+│       ├── blogContent.ts          # Full blog post content
+│       └── hooks.ts                # useTypewriter, useReveal
 └── public/
-    ├── profile.png             # Profile photo
+    ├── profile.png                 # Profile photo
     └── Rahul_Resume_Internship.pdf
 ```
 
