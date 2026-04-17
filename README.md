@@ -44,6 +44,8 @@ rahul-portfolio/
 │   │   ├── layout.tsx              # Root layout, font injection, meta tags
 │   │   ├── page.tsx                # Home page — assembles all sections
 │   │   ├── globals.css             # Design tokens, animations, shared utilities
+│   │   ├── sitemap.ts              # Auto-generates /sitemap.xml for Google
+│   │   ├── robots.ts               # Auto-generates /robots.txt for crawlers
 │   │   └── blog/
 │   │       └── [slug]/
 │   │           └── page.tsx        # Dynamic blog post renderer
